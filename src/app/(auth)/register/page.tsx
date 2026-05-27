@@ -46,7 +46,8 @@ interface FormErrors {
 export default function RegisterPage() {
   const router = useRouter();
 
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState(true);
+
   const [formData, setFormData] = useState<FormData>({
     name: "",
     email: "",
@@ -57,14 +58,7 @@ export default function RegisterPage() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const stored = getStoredAuth();
-    if (stored) {
-      router.replace(getDashboardForRole(stored.user.role));
-      return;
-    }
-    setReady(true);
-  }, [router]);
+
 
   if (!ready) return null;
 
@@ -104,18 +98,14 @@ export default function RegisterPage() {
       localStorage.setItem("role", data.user.role);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      dispatch(
-        setCredentials({
-          token: data.token,
-          user: data.user,
-        })
-      );
+      // After successful registration we MUST send the user to /login.
+      // Clear any just-created auth so DashboardAuthGuard will not redirect back to /tl or /employee.
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      localStorage.removeItem("user");
+      dispatch(setCredentials({ token: "", user: data.user }));
 
-      if (data.user.role === "teamlead") {
-        router.replace("/login");
-      } else {
-        router.replace("/login");
-      }
+      router.replace("/login");
     } catch (error) {
       setErrors({
         global:
